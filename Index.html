@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматы</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.css" />
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #status {
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Шахматы: Игрок против Компьютера</h1>
+    <div id="board" style="width: 400px"></div>
+    <div id="status"></div>
+    <button id="startBtn">Начать игру</button>
+    <button id="clearBtn">Очистить доску</button>
+    <button id="moveBtn">Сделать ход компьютера</button>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+    <script>
+        const board = ChessBoard('board', {
+            draggable: true,
+            position: 'start',
+            onDrop: handleDrop,
+            onSnapEnd: onSnapEnd,
+            onMouseoutSquare: onMouseoutSquare,
+            onMouseoverSquare: onMouseoverSquare,
+        });
+
+        let game = new Chess();
+        updateStatus();
+
+        function handleDrop(source, target) {
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // всегда превращаем в ферзя для простоты
+            });
+
+            // Если ход недопустим, возвращаем фигуру на место
+            if (move === null) return 'snapback';
+
+            updateStatus();
+            // Ход компьютера
+            setTimeout(makeBestMove, 250);
+        }
+
+        function updateStatus() {
+            let status = '';
+            const moveColor = game.turn() === 'w' ? 'Белые' : 'Черные';
+
+            if (game.inCheck()) {
+                status = `Угроза шаха! ${moveColor} ходит.`;
+            } else {
+                status = `Ход: ${moveColor}`;
+            }
+
+            if (game.game_over()) {
+                status = 'Игра окончена!';
+            }
+
+            document.getElementById('status').innerText = status;
+        }
+
+        function makeBestMove() {
+            const possibleMoves = game.ugly_moves();
+
+            // Если нет возможных ходов, значит, игра окончена
+            if (game.game_over() || game.in_draw()) return;
+
+            // Находим случайный ход
+            const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+            const move = possibleMoves[randomIndex];
+
+            game.move(move);
+            board.position(game.fen());
+            updateStatus();
+        }
+
+        // Другие функции для кнопок
+        document.getElementById('startBtn').addEventListener('click', board.start);
+        document.getElementById('clearBtn').addEventListener('click', board.clear);
+    </script>
+</body>
+</html>
